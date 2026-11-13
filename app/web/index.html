@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ربات رصد امنیتی برای بله</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#1c2430;--mut:#5d6b7e;--line:#dfe5ee;--pri:#1f6feb;--ok:#18794e;--bad:#c62828;--warn:#9a6700}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--card:#18202b;--ink:#e6ecf5;--mut:#9aa8bb;--line:#2a3544;--pri:#4c8dff;--ok:#3fb27f;--bad:#ff6b6b;--warn:#e3b341}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;line-height:1.8;font-size:15px}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+header h1{font-size:17px;margin:0 0 0 auto}
+main{max-width:920px;margin:18px auto;padding:0 14px 60px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+section>h2{font-size:16px;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 12px;font-size:13px}
+label.f{display:block;font-weight:700;margin-top:12px}
+.help{color:var(--mut);font-size:13px;margin:2px 0 6px}
+.help b{color:var(--ink)}
+input[type=text],input[type=password],input[type=number],textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:84px;resize:vertical}
+.ltr{direction:ltr;text-align:left;font-family:Consolas,monospace}
+.row{display:flex;flex-wrap:wrap;gap:10px}.row>div{flex:1 1 200px}
+button{font:inherit;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+button.bad{color:var(--bad)}
+button:disabled{opacity:.55;cursor:wait}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.msg{margin-top:10px;font-size:14px}.msg div{padding:2px 0}.ok{color:var(--ok)}.err{color:var(--bad)}.warn{color:var(--warn)}
+.cat{margin-top:12px;border-top:1px dashed var(--line);padding-top:8px}
+.cat h3{font-size:14px;margin:0 0 4px;display:flex;gap:10px;align-items:center}
+.cat h3 a{font-weight:400;font-size:12px;color:var(--pri);cursor:pointer}
+.src{display:flex;gap:8px;align-items:baseline;padding:1px 0}
+.src small{color:var(--mut);direction:ltr;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px}
+.src .res{margin-right:auto;font-size:12px}
+.chk{display:flex;gap:8px;align-items:center;margin-top:10px}
+details{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+summary{cursor:pointer;font-weight:700}
+.badge{padding:2px 12px;border-radius:99px;font-size:13px;background:var(--bg);border:1px solid var(--line)}
+.badge.on{color:var(--ok);border-color:var(--ok)}.badge.off{color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:10px 0}
+.stat{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.stat span{display:block;color:var(--mut);font-size:12px}
+#logs{background:#0d1117;color:#c9d1d9;border-radius:8px;padding:8px 10px;height:230px;overflow:auto;font-size:12.5px;line-height:1.7}
+#logs .l-warn{color:#e3b341}#logs .l-error{color:#ff7b72}
+ol{margin:6px 0;padding-right:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ ربات رصد امنیتی برای بله</h1>
+  <span id="badge" class="badge off">متوقف</span>
+  <button class="pri" id="bSave">ذخیره تنظیمات</button>
+  <button id="bStart">▶ ذخیره و شروع</button>
+  <button id="bStop" class="bad">■ توقف</button>
+  <button id="bNow">⟳ اجرای فوری یک دوره</button>
+</header>
+<main>
+
+<section>
+  <h2>۱) اتصال به بله</h2>
+  <p class="sub">این دو مورد ضروری‌اند. راهنمای گام‌به‌گام با عکس‌گونه‌ی کامل در فایل PDF همراه برنامه است.</p>
+
+  <label class="f" for="token">توکن ربات</label>
+  <div class="help"><b>چی بنویسم؟</b> رشته‌ای شبیه <span class="ltr">123456789:AbCdEfGh...</span> —
+    <b>از کجا بگیرم؟</b> در بله با <span class="ltr">@botfather</span> چت کنید، دستور <span class="ltr">/newbot</span> را بزنید،
+    نام و آیدی ربات را بدهید؛ در پایان توکن را می‌فرستد. توکن مثل رمز عبور است؛ به کسی ندهید.</div>
+  <div class="row">
+    <div style="flex:1 1 380px"><input id="token" type="password" class="ltr" autocomplete="off" placeholder=""></div>
+    <div style="flex:0 0 auto"><button id="bShow" type="button">نمایش</button></div>
+  </div>
+  <div class="help" id="tokenSaved"></div>
+
+  <label class="f" for="channel">آیدی کانال</label>
+  <div class="help"><b>چی بنویسم؟</b> آیدی عمومی کانال با @ (مثل <span class="ltr">@my_sec_feed</span>) یا لینک <span class="ltr">ble.ir/my_sec_feed</span>
+    یا شناسهٔ عددی. — <b>از کجا بگیرم؟</b> کانال بسازید و نوع آن را «عمومی» بگذارید؛ آیدی همان بخش بعد از <span class="ltr">ble.ir/</span> است.
+    ربات را حتماً <b>ادمین کانال</b> (با اجازهٔ ارسال پیام) کنید.</div>
+  <input id="channel" type="text" class="ltr" placeholder="@my_sec_feed">
+
+  <div class="btns">
+    <button id="bTestBale" class="pri">تست اتصال و ارسال پیام آزمایشی</button>
+    <button id="bDetect">پیدا کردن شناسهٔ عددی (کانال خصوصی)</button>
+  </div>
+  <div class="help">دکمهٔ دوم فقط برای کانال خصوصی است: ابتدا یک پیام در کانال بنویسید، بعد این دکمه را بزنید. ممکن است در بله نتیجه ندهد؛ در آن صورت کانال را عمومی کنید.</div>
+  <div id="msgBale" class="msg"></div>
+</section>
+
+<section>
+  <h2>۲) نحوهٔ ارسال</h2>
+  <div class="row">
+    <div><label class="f" for="interval">هر چند دقیقه منابع بررسی شود؟</label>
+      <div class="help">پیشنهاد: ۱۵ تا ۳۰. عدد کوچک‌تر یعنی خبر زودتر، ولی فشار بیشتر روی منابع.</div>
+      <input id="interval" type="number" min="1" max="1440"></div>
+    <div><label class="f" for="maxposts">حداکثر پیام در هر دوره</label>
+      <div class="help">اگر خبر بیشتری باشد، در صف می‌ماند و دورهٔ بعد فرستاده می‌شود.</div>
+      <input id="maxposts" type="number" min="1" max="50"></div>
+    <div><label class="f" for="delay">فاصلهٔ بین دو پیام (ثانیه)</label>
+      <div class="help">برای جلوگیری از محدودیت نرخ بله؛ ۳ تا ۵ مناسب است.</div>
+      <input id="delay" type="number" min="1" max="120"></div>
+  </div>
+  <div class="row">
+    <div><label class="f" for="maxage">حداکثر سن خبر (ساعت)</label>
+      <div class="help">خبرهای قدیمی‌تر از این نادیده گرفته می‌شوند.</div>
+      <input id="maxage" type="number" min="1" max="720"></div>
+    <div><label class="f" for="sumchars">طول خلاصه (کاراکتر)</label>
+      <div class="help">۰ = فقط عنوان و لینک. (با تصویر، سقف کل پیام حدود ۱۰۰۰ کاراکتر است.)</div>
+      <input id="sumchars" type="number" min="0" max="800"></div>
+  </div>
+  <div class="chk"><input id="sendimg" type="checkbox"><label for="sendimg">تصویر شاخص خبر هم ارسال شود (اگر داشت)</label></div>
+  <div class="chk"><input id="skipback" type="checkbox"><label for="skipback">در اولین اجرا مطالب قدیمی ارسال نشود (فقط خبرهای جدیدِ بعد از شروع)</label></div>
+  <div class="chk"><input id="autostart" type="checkbox"><label for="autostart">با اجرای برنامه، ربات خودکار شروع شود</label></div>
+</section>
+
+<section>
+  <h2>۳) منابع خبر</h2>
+  <p class="sub">منابع انتخاب‌شده در هر دوره بررسی می‌شوند. با «تست منابع» می‌بینید کدام‌ها از اینترنت شما در دسترس‌اند.</p>
+  <div id="sources"></div>
+  <label class="f" for="custom">منبع دلخواه (RSS/Atom)</label>
+  <div class="help"><b>چی بنویسم؟</b> هر خط یک منبع: <span class="ltr">نام | آدرس فید</span> (یا فقط آدرس). —
+    <b>از کجا بگیرم؟</b> اکثر سایت‌ها آدرس‌هایی مثل <span class="ltr">/feed</span> یا <span class="ltr">/rss.xml</span> دارند؛ راهنمای PDF روش پیدا کردن را توضیح داده است.</div>
+  <textarea id="custom" class="ltr" placeholder="My CERT | https://example.org/feed.xml"></textarea>
+  <div class="btns"><button id="bTestSrc">تست منابع انتخاب‌شده</button></div>
+  <div id="msgSrc" class="msg"></div>
+</section>
+
+<section>
+  <h2>۴) فیلتر کلمات کلیدی (اختیاری)</h2>
+  <div class="row">
+    <div><label class="f" for="inc">فقط اگر شامل این کلمات بود</label>
+      <div class="help">هر خط یک کلمه (انگلیسی). خالی = همه. مثال: <span class="ltr">iran, ddos, bgp, ransomware</span></div>
+      <textarea id="inc" class="ltr"></textarea></div>
+    <div><label class="f" for="exc">اگر شامل این کلمات بود ارسال نشود</label>
+      <div class="help">مثلاً تبلیغات و وبینارها: <span class="ltr">webinar, sponsored</span></div>
+      <textarea id="exc" class="ltr"></textarea></div>
+  </div>
+</section>
+
+<section>
+  <h2>۵) پیشرفته</h2>
+  <details>
+    <summary>پروکسی و تنظیمات شبکه</summary>
+    <label class="f" for="fetchproxy">پروکسی دریافت منابع (اختیاری)</label>
+    <div class="help">اگر سایت‌های خبری از اینترنت شما باز نمی‌شوند. نمونه: <span class="ltr">http://127.0.0.1:10809</span> یا <span class="ltr">socks5://127.0.0.1:10808</span>.
+      آدرس را از برنامهٔ VPN/پروکسی خودتان (بخش تنظیمات: Local proxy / Port) بردارید. خالی = بدون پروکسی.</div>
+    <input id="fetchproxy" type="text" class="ltr">
+    <label class="f" for="baleproxy">پروکسی ارتباط با بله (اختیاری)</label>
+    <div class="help">فقط اگر اتصال به سرور بله از شبکهٔ شما برقرار نمی‌شود (مثلاً اجرا روی سرور خارج از ایران). معمولاً خالی بماند.</div>
+    <input id="baleproxy" type="text" class="ltr">
+    <label class="f" for="apibase">آدرس API بله</label>
+    <div class="help">پیش‌فرض را تغییر ندهید، مگر اینکه یک رلهٔ شخصی دارید.</div>
+    <input id="apibase" type="text" class="ltr">
+  </details>
+  <details>
+    <summary>دیتابیس</summary>
+    <div class="help" style="margin-top:8px">متن و عکسِ هر پیام <b>بلافاصله پس از ارسال موفق از دیتابیس حذف می‌شود</b> و فقط یک اثرانگشت ۲۰ حرفی (برای ارسال‌نشدن تکراری) می‌ماند؛ این اثرانگشت‌ها بعد از چند روز خودکار پاک می‌شوند.</div>
+    <label class="f" for="retention">نگه‌داشتن اثرانگشت‌ها (روز)</label>
+    <input id="retention" type="number" min="3" max="365" style="max-width:160px">
+    <div class="btns">
+      <button id="bClearQ">خالی کردن صف ارسال</button>
+      <button id="bClearAll" class="bad">پاک‌سازی کامل دیتابیس</button>
+    </div>
+    <div class="help">«پاک‌سازی کامل» اثرانگشت‌ها را هم پاک می‌کند؛ ممکن است خبرهای اخیر دوباره ارسال شوند.</div>
+  </details>
+</section>
+
+<section>
+  <h2>وضعیت زنده</h2>
+  <div class="grid">
+    <div class="stat"><span>وضعیت</span><b id="sState">—</b></div>
+    <div class="stat"><span>آخرین دوره</span><b id="sLast">—</b></div>
+    <div class="stat"><span>دورهٔ بعد</span><b id="sNext">—</b></div>
+    <div class="stat"><span>در صف ارسال</span><b id="sQueue">—</b></div>
+    <div class="stat"><span>کل ارسال‌شده</span><b id="sSent">—</b></div>
+    <div class="stat"><span>حجم دیتابیس</span><b id="sDb">—</b></div>
+  </div>
+  <div class="help" id="sSummary"></div>
+  <div class="help err" id="sErr"></div>
+  <div id="logs"></div>
+</section>
+
+</main>
+<script>
+const TOKEN="__PANEL_TOKEN__";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(path,body){
+  const o={headers:{"X-Panel-Token":TOKEN}};
+  if(body!==undefined){o.method="POST";o.headers["Content-Type"]="application/json";o.body=JSON.stringify(body);}
+  try{const r=await fetch(path,o);return await r.json();}catch(e){return {ok:false,error:"ارتباط با برنامه قطع است. آیا برنامه هنوز اجرا است؟"};}
+}
+function show(id,html){$(id).innerHTML=html;}
+function busy(btn,on){btn.disabled=on;}
+let SRC=[],CATS={};
+
+function renderSources(selected){
+  const sel=new Set(selected);let h="";
+  for(const [key,label] of Object.entries(CATS)){
+    if(key==="custom")continue;
+    const list=SRC.filter(s=>s.category===key);if(!list.length)continue;
+    h+=`<div class="cat"><h3>${esc(label)} <a data-cat="${key}" data-on="1">همه</a><a data-cat="${key}" data-on="0">هیچ</a></h3>`;
+    for(const s of list){
+      h+=`<div class="src"><input type="checkbox" class="src" data-cat="${key}" id="s-${s.id}" value="${s.id}" ${sel.has(s.id)?"checked":""}>
+      <label for="s-${s.id}">${esc(s.name)}</label><small>${esc(s.url)}</small><span class="res" id="r-${s.id}"></span></div>`;
+    }
+    h+="</div>";
+  }
+  $("sources").innerHTML=h;
+  document.querySelectorAll("#sources a[data-cat]").forEach(a=>a.onclick=()=>{
+    document.querySelectorAll(`input.src[data-cat="${a.dataset.cat}"]`).forEach(c=>c.checked=a.dataset.on==="1");});
+}
+function fill(c){
+  $("token").value="";
+  $("token").placeholder=c.has_token?"(ذخیره شده — برای تغییر، توکن جدید را وارد کنید)":"123456789:AbCdEf...";
+  $("tokenSaved").textContent=c.has_token?("توکن ذخیره‌شده: "+c.token_masked):"";
+  $("channel").value=c.channel_id;$("interval").value=c.interval_minutes;$("maxposts").value=c.max_posts_per_cycle;
+  $("delay").value=c.delay_between_posts_sec;$("maxage").value=c.max_age_hours;$("sumchars").value=c.summary_chars;
+  $("sendimg").checked=c.send_images;$("skipback").checked=c.skip_backlog_first_run;$("autostart").checked=c.auto_start;
+  $("custom").value=c.custom_feeds_text;$("inc").value=c.include_keywords_text;$("exc").value=c.exclude_keywords_text;
+  $("fetchproxy").value=c.fetch_proxy;$("baleproxy").value=c.bale_proxy;$("apibase").value=c.bale_api_base;
+  $("retention").value=c.seen_retention_days;
+  renderSources(c.selected_sources);
+}
+function collect(){
+  return {
+    bale_token:$("token").value.trim(),channel_id:$("channel").value.trim(),
+    interval_minutes:+$("interval").value,max_posts_per_cycle:+$("maxposts").value,
+    delay_between_posts_sec:+$("delay").value,max_age_hours:+$("maxage").value,summary_chars:+$("sumchars").value,
+    send_images:$("sendimg").checked,skip_backlog_first_run:$("skipback").checked,auto_start:$("autostart").checked,
+    selected_sources:[...document.querySelectorAll("input.src:checked")].map(x=>x.value),
+    custom_feeds_text:$("custom").value,include_keywords_text:$("inc").value,exclude_keywords_text:$("exc").value,
+    fetch_proxy:$("fetchproxy").value.trim(),bale_proxy:$("baleproxy").value.trim(),bale_api_base:$("apibase").value.trim(),
+    seen_retention_days:+$("retention").value
+  };
+}
+async function save(){
+  const r=await api("/api/save",collect());
+  if(r.ok){fill(r.config);}
+  return r;
+}
+function flash(text,cls){
+  const m=$("msgBale");m.innerHTML=`<div class="${cls}">${esc(text)}</div>`;
+}
+$("bShow").onclick=()=>{const t=$("token");t.type=t.type==="password"?"text":"password";$("bShow").textContent=t.type==="password"?"نمایش":"پنهان";};
+$("bSave").onclick=async()=>{const r=await save();flash(r.ok?"✅ تنظیمات ذخیره شد.":"❌ "+(r.error||"خطا"),r.ok?"ok":"err");};
+$("bStart").onclick=async()=>{
+  const s=await save();if(!s.ok){flash("❌ "+(s.error||"خطا"),"err");return;}
+  const r=await api("/api/start",{});flash(r.ok?"▶ ربات شروع شد.":"❌ "+r.error,r.ok?"ok":"err");poll();
+};
+$("bStop").onclick=async()=>{await api("/api/stop",{});flash("■ ربات متوقف شد.","warn");poll();};
+$("bNow").onclick=async()=>{await save();const r=await api("/api/run_now",{});flash(r.ok?"⟳ یک دورهٔ فوری شروع شد.":"❌ "+r.error,r.ok?"ok":"err");};
+$("bTestBale").onclick=async()=>{
+  const b=$("bTestBale");busy(b,true);show("msgBale","<div>در حال تست…</div>");
+  const r=await api("/api/test_bale",collect());busy(b,false);
+  show("msgBale",(r.steps||[{ok:false,text:r.error||"خطا"}]).map(s=>`<div class="${s.ok?"ok":"err"}">${s.ok?"✅":"❌"} ${esc(s.text)}</div>`).join(""));
+};
+$("bDetect").onclick=async()=>{
+  const b=$("bDetect");busy(b,true);show("msgBale","<div>در حال جستجو…</div>");
+  const r=await api("/api/detect_chat",collect());busy(b,false);
+  if(!r.ok){show("msgBale",`<div class="err">❌ ${esc(r.error)}</div>`);return;}
+  if(!r.chats.length){show("msgBale",'<div class="warn">چیزی پیدا نشد. ابتدا یک پیام در کانال بنویسید و ربات را ادمین کنید؛ اگر باز هم خالی بود از آیدی عمومی استفاده کنید.</div>');return;}
+  show("msgBale",r.chats.map(c=>`<div class="ok">${esc(c.type||"chat")} — ${esc(c.title)} — شناسه: <span class="ltr">${esc(c.id)}</span></div>`).join(""));
+};
+$("bTestSrc").onclick=async()=>{
+  const b=$("bTestSrc");busy(b,true);show("msgSrc","<div>در حال تست منابع (ممکن است تا نیم دقیقه طول بکشد)…</div>");
+  const r=await api("/api/test_sources",collect());busy(b,false);
+  if(!r.ok){show("msgSrc",`<div class="err">${esc(r.error||"خطا")}</div>`);return;}
+  let ok=0,bad=0,custom="";
+  document.querySelectorAll("#sources .res").forEach(e=>e.textContent="");
+  for(const x of r.results){
+    x.ok?ok++:bad++;
+    const el=$("r-"+x.id);const t=x.ok?`✅ ${x.count} مطلب`:`❌ ${x.error}`;
+    if(el){el.textContent=t;el.className="res "+(x.ok?"ok":"err");}
+    else custom+=`<div class="${x.ok?"ok":"err"}">${esc(x.id)}: ${esc(t)}</div>`;
+  }
+  show("msgSrc",`<div>${ok} منبع سالم، ${bad} منبع ناموفق.</div>${custom}`+(bad?'<div class="help">منابع ناموفق را تیک بردارید یا پروکسی دریافت منابع را در «پیشرفته» تنظیم کنید.</div>':""));
+};
+$("bClearQ").onclick=async()=>{if(confirm("صف ارسال خالی شود؟")){await api("/api/clear_db",{only_queue:true});poll();}};
+$("bClearAll").onclick=async()=>{if(confirm("کل دیتابیس پاک شود؟ ممکن است خبرهای اخیر دوباره ارسال شوند.")){await api("/api/clear_db",{});poll();}};
+
+const fmtT=ts=>ts?new Date(ts*1000).toLocaleTimeString("fa-IR"):"—";
+function fmtB(n){return n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB";}
+async function poll(){
+  const r=await api("/api/status");if(!r.status)return;const s=r.status;
+  const b=$("badge");b.textContent=s.running?"در حال اجرا":"متوقف";b.className="badge "+(s.running?"on":"off");
+  $("sState").textContent=s.state;$("sLast").textContent=fmtT(s.last_cycle);$("sNext").textContent=s.running?fmtT(s.next_cycle):"—";
+  $("sQueue").textContent=s.queue;$("sSent").textContent=s.sent_total;$("sDb").textContent=fmtB(s.db_bytes);
+  $("sSummary").textContent=s.last_summary||"";$("sErr").textContent=s.last_error?("⚠ "+s.last_error):"";
+  const L=$("logs");const atEnd=L.scrollTop+L.clientHeight>=L.scrollHeight-30;
+  L.innerHTML=r.logs.map(l=>`<div class="l-${l.level}">[${l.t}] ${esc(l.msg)}</div>`).join("");
+  if(atEnd)L.scrollTop=L.scrollHeight;
+}
+(async()=>{
+  const r=await api("/api/config");
+  if(r.config){SRC=r.sources;CATS=r.categories;fill(r.config);}
+  poll();setInterval(poll,3000);
+})();
+</script>
+</body>
+</html>
